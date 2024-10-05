@@ -15,12 +15,14 @@ build-type:          Simple
 extra-source-files:  README.md
                      CHANGELOG.md
 
-executable SATSolver
+executable SATSolver-exe
   hs-source-dirs:      src
   main-is:             Main.hs
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5,
-                       megaparsec == 9.3.1
+                       megaparsec >= 9.3,
+                       QuickCheck,
+                       bytestring >= 0.11
   ghc-options:         -Wall
                        -Wcompat
                        -Widentities
@@ -30,3 +32,27 @@ executable SATSolver
                        -Wmissing-home-modules
                        -Wpartial-fields
                        -Wredundant-constraints
+test-suite SATSolver-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      LangGen
+  hs-source-dirs: test
+  ghc-options: -Wall 
+               -Wcompat 
+               -Widentities 
+               -Wincomplete-record-updates 
+               -Wincomplete-uni-patterns 
+               -Wmissing-export-lists
+               -Wmissing-home-modules 
+               -Wpartial-fields 
+               -Wredundant-constraints 
+               -threaded 
+               -rtsopts 
+               -with-rtsopts=-N
+  build-depends:
+      QuickCheck
+    , array
+    , base >=4.7 && <5
+    , bytestring >= 0.11
+  default-language: Haskell2010

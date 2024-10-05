@@ -1,4 +1,6 @@
-module Parser () where 
+{-# LANGUAGE InstanceSigs #-}
+
+module Parser (LangProp, parseProp) where
 
 import Data.Void (Void)
 import Text.Megaparsec
@@ -7,65 +9,28 @@ import qualified Text.Megaparsec.Char.Lexer as L
 
 newtype Identifier = Identifier
   { getId :: String
-  } deriving (Show)
+  }
 
-data SExp
-  = SSExp    SExp [SExp]  -- (foo 0 "hello" bar), (bar (baz 1)), (foo)
-  | SInteger Integer  -- 42
-  | SDouble  Double -- 42f, 3.1415f
-  | SString  String  -- "hello, world"
-  | SBool    Bool  -- false, true
-  | SId      Identifier  -- foo
-  deriving (Show)
-  
-type Parser = Parsec
-  -- The type for custom error messages. We have none, so use `Void`.
-  Void
-  -- The input stream type. Let's use `String` for now, but for
-  -- better performance, you might want to use `Text` or `ByteString`.
-  String
+instance Show Identifier where
+  show :: Identifier -> String
+  show = getId
 
-bool :: Parser Bool
-bool = False <$ string "false" <|> True <$ string "true"
+data LangProp
+  = Atom Identifier
+  | Not LangProp
+  | Entail LangProp LangProp
+  | And LangProp LangProp
+  | Or LangProp LangProp
 
-atom :: Parser SExp
-atom = lexeme $ choice [SBool <$> bool, numeric, SString <$> str, SId <$> identifier, uncurry SSExp <$> sexp]
+instance Show LangProp where
+  show :: LangProp -> String
+  show (Atom ident) = show ident
+  show (Not expr) = "!" ++ show expr
+  show (Entail expr1 expr2) = "(" ++ show expr1 ++ " -> " ++ show expr2 ++ ")"
+  show (And expr1 expr2) = show expr1 ++ " & " ++ show expr2
+  show (Or expr1 expr2) = show expr1 ++ " | " ++ show expr2
 
-numeric :: Parser SExp
-numeric = label "number" $ lexeme $ do
-  -- Left side before . or f
-  left <- some numberChar
-
-  -- .0f or f
-  rightM <- optional $ choice
-    [ do
-        char '.'
-        right <- some numberChar
-        char' 'f'
-        pure $ left ++ "." ++ right
-    , do
-        char' 'f'
-        pure left
-    ]
-
-  -- If we had the right side, it's a double, otherwise an integer.
-  pure $ case rightM of
-    Nothing -> SInteger $ read left
-    Just right -> SDouble $ read right
-    
-{- 
-integer :: Parser Integer
-integer = label "integer" $ read <$> (some numberChar <|> ((:) <$> char '-') <*> some numberChar)
- -}
-
-str :: Parser String 
-str = label "string" $ between (char '"') (char '"') (takeWhileP Nothing (/= '"'))
-
-identifier:: Parser Identifier
-identifier = label "identifier" $ do 
-    first <- letterChar <|> char '_'
-    rest <- many $ alphaNumChar <|> char '_' 
-    return $ Identifier $ first :rest
+type Parser = Parsec Void String
 
 skipSpace :: Parser ()
 skipSpace = L.space space1 (L.skipLineComment ";;") (L.skipBlockCommentNested "/*" "*/")
@@ -73,14 +38,66 @@ skipSpace = L.space space1 (L.skipLineComment ";;") (L.skipBlockCommentNested "/
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme skipSpace
 
-sexp :: Parser (SExp, [SExp])
-sexp = label "S-expression" $ lexeme $ between (lexeme (char '(')) (char ')') ((,) <$> atom <*> many atom)
+parseProp :: String -> Either String LangProp
+parseProp input =
+  let outputE =
+        runParser
+          (between skipSpace eof parseExp)
+          ""
+          input
+   in case outputE of
+        Left err -> Left $ errorBundlePretty err
+        Right output -> Right output
 
-parseSExp :: String -> Either String SExp 
-parseSExp input = 
-  let outputE = parse (between skipSpace eof atom)
-                      ""        
-                      input
-  in case outputE of 
-    Left err -> Left $ errorBundlePretty err 
-    Right output -> Right output
+parseExp :: Parser LangProp
+parseExp = lexeme entailP
+
+accP :: Parser a -> Parser LangProp -> LangProp -> (LangProp -> LangProp -> LangProp) -> Parser LangProp
+accP startP nextP expr cons = lexeme $ do
+  start <- lexeme $ optional startP
+  case start of
+    Nothing -> return expr
+    Just _ -> lexeme $ do
+      rest <- nextP
+      accP startP nextP (cons expr rest) cons
+
+entailP :: Parser LangProp
+entailP = label "entail" $ lexeme $ do
+  orExp <- orP
+  accP (string "->") orP orExp Entail
+
+orP :: Parser LangProp
+orP = label "or" $ lexeme $ do
+  andExp <- andP
+  accP (char '|') andP andExp Or
+
+andP :: Parser LangProp
+andP = label "and" $ lexeme $ do
+  notExp <- notP
+  accP (char '&') notP notExp And
+
+notP :: Parser LangProp
+notP = label "not" $ lexeme $ do
+  not <- lexeme $ optional $ char '!'
+  case not of
+    Nothing -> termP
+    Just _ -> Not <$> termP
+
+termP :: Parser LangProp
+termP = label "term" $ lexeme $ do
+  fst <- lexeme $ optional $ char '('
+  case fst of
+    Nothing -> Atom <$> identP
+    Just _ -> do
+      exp <- parseExp
+      char ')'
+      return exp
+
+punc :: [Parser Char]
+punc = char <$> ['=', '?']
+
+identP :: Parser Identifier
+identP = label "identifier" $ lexeme $ do
+  first <- letterChar <|> char '_'
+  rest <- many $ alphaNumChar <|> char '_' <|> choice punc
+  return $ Identifier $ first : rest
