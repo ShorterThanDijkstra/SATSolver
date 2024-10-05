@@ -43,7 +43,7 @@ getBinDir, getLibDir, getDynLibDir, getDataDir, getLibexecDir, getSysconfDir :: 
 
 bindir, libdir, dynlibdir, datadir, libexecdir, sysconfdir :: FilePath
 bindir     = "/home/maerd_zinbiel/Desktop/SATSolver/.stack-work/install/x86_64-linux-tinfo6/66e0511eecb18dd8a63ed4479bfeb48ef1bc1234a20fe893c9a5af88c38aecb1/9.4.8/bin"
-libdir     = "/home/maerd_zinbiel/Desktop/SATSolver/.stack-work/install/x86_64-linux-tinfo6/66e0511eecb18dd8a63ed4479bfeb48ef1bc1234a20fe893c9a5af88c38aecb1/9.4.8/lib/x86_64-linux-ghc-9.4.8/SATSolver-0.1.0.0-M6Bjz4Xb88FoBuCXCTIbb-SATSolver-exe"
+libdir     = "/home/maerd_zinbiel/Desktop/SATSolver/.stack-work/install/x86_64-linux-tinfo6/66e0511eecb18dd8a63ed4479bfeb48ef1bc1234a20fe893c9a5af88c38aecb1/9.4.8/lib/x86_64-linux-ghc-9.4.8/SATSolver-0.1.0.0-36838yUYSzA4uwyZ2815s3-SATSolver-exe"
 dynlibdir  = "/home/maerd_zinbiel/Desktop/SATSolver/.stack-work/install/x86_64-linux-tinfo6/66e0511eecb18dd8a63ed4479bfeb48ef1bc1234a20fe893c9a5af88c38aecb1/9.4.8/lib/x86_64-linux-ghc-9.4.8"
 datadir    = "/home/maerd_zinbiel/Desktop/SATSolver/.stack-work/install/x86_64-linux-tinfo6/66e0511eecb18dd8a63ed4479bfeb48ef1bc1234a20fe893c9a5af88c38aecb1/9.4.8/share/x86_64-linux-ghc-9.4.8/SATSolver-0.1.0.0"
 libexecdir = "/home/maerd_zinbiel/Desktop/SATSolver/.stack-work/install/x86_64-linux-tinfo6/66e0511eecb18dd8a63ed4479bfeb48ef1bc1234a20fe893c9a5af88c38aecb1/9.4.8/libexec/x86_64-linux-ghc-9.4.8/SATSolver-0.1.0.0"
