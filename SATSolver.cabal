@@ -22,7 +22,9 @@ executable SATSolver-exe
   build-depends:       base >= 4.7 && < 5,
                        megaparsec >= 9.3,
                        QuickCheck,
-                       bytestring >= 0.11
+                       bytestring >= 0.11,
+                       containers
+                       
   ghc-options:         -Wall
                        -Wcompat
                        -Widentities

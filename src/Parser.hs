@@ -1,34 +1,20 @@
-{-# LANGUAGE InstanceSigs #-}
-
-module Parser (LangProp, parseProp) where
+module Parser (LangProp, parseProp, testProp) where
 
 import Data.Void (Void)
+import LangProp (Identifier(..), LangProp(..))
 import Text.Megaparsec
-import Text.Megaparsec.Char
+  ( MonadParsec (eof, label),
+    Parsec,
+    between,
+    choice,
+    errorBundlePretty,
+    many,
+    optional,
+    runParser,
+    (<|>),
+  )
+import Text.Megaparsec.Char (alphaNumChar, char, letterChar, space1, string)
 import qualified Text.Megaparsec.Char.Lexer as L
-
-newtype Identifier = Identifier
-  { getId :: String
-  }
-
-instance Show Identifier where
-  show :: Identifier -> String
-  show = getId
-
-data LangProp
-  = Atom Identifier
-  | Not LangProp
-  | Entail LangProp LangProp
-  | And LangProp LangProp
-  | Or LangProp LangProp
-
-instance Show LangProp where
-  show :: LangProp -> String
-  show (Atom ident) = show ident
-  show (Not expr) = "!" ++ show expr
-  show (Entail expr1 expr2) = "(" ++ show expr1 ++ " -> " ++ show expr2 ++ ")"
-  show (And expr1 expr2) = show expr1 ++ " & " ++ show expr2
-  show (Or expr1 expr2) = show expr1 ++ " | " ++ show expr2
 
 type Parser = Parsec Void String
 
@@ -38,6 +24,11 @@ skipSpace = L.space space1 (L.skipLineComment ";;") (L.skipBlockCommentNested "/
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme skipSpace
 
+testProp :: String -> LangProp 
+testProp input = case parseProp input of 
+  Left _ -> Atom $ Identifier ""
+  Right p -> p
+  
 parseProp :: String -> Either String LangProp
 parseProp input =
   let outputE =
@@ -94,7 +85,7 @@ termP = label "term" $ lexeme $ do
       return exp
 
 punc :: [Parser Char]
-punc = char <$> ['=', '?']
+punc = char <$> ['=', '?', '>', '<', '/']
 
 identP :: Parser Identifier
 identP = label "identifier" $ lexeme $ do
