@@ -5,12 +5,7 @@ import Parser
 import qualified CNF as C 
 import qualified LangPropCore as L
 
-test = C.transform . L.transform 
-p1 = testProp "(p1 & p2) | p3"
-
-p2 = testProp "((p1 & p2) | p3) | p4"
-
-p3 = testProp "(A & B) | (C & D) | E"
+test = C.transform . L.transform . testProp
 
 main :: IO ()
 main = do
