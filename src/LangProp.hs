@@ -28,5 +28,6 @@ instance Show LangProp where
   show (Atom ident) = show ident
   show (Not expr) = "!" ++ show expr
   show (Entail expr1 expr2) = "(" ++ show expr1 ++ " -> " ++ show expr2 ++ ")"
-  show (And expr1 expr2) = show expr1 ++ " & " ++ show expr2
-  show (Or expr1 expr2) = show expr1 ++ " | " ++ show expr2
+  show (And expr1 expr2) = "(" ++ show expr1 ++ " & " ++ show expr2 ++ ")"
+  show (Or expr1 expr2) = "(" ++ show expr1 ++ " | " ++ show expr2 ++ ")"
+
