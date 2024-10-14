@@ -32,6 +32,7 @@ ExpAnd'     := & ExpAnd'
 ExpAnd'     := epsilon
 ExpNot      := !ExpTerm
 ExpNot      := ExpTerm
+ExpTerm     := !ExpTerm
 ExpTerm     := ident
 ExpTerm     := (Exp)
 

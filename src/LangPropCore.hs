@@ -8,6 +8,7 @@ data LangPropCore
   | Not  LangPropCore
   | And  LangPropCore LangPropCore
   | Or  LangPropCore LangPropCore
+  deriving Eq
   
 instance Show LangPropCore where
   show :: LangPropCore -> String

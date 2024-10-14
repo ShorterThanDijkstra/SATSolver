@@ -76,13 +76,17 @@ notP = label "not" $ lexeme $ do
 
 termP :: Parser LangProp
 termP = label "term" $ lexeme $ do
-  fst <- lexeme $ optional $ char '('
+  fst <- lexeme $ optional $ choice [char '(', char '!']
   case fst of
     Nothing -> Atom <$> identP
-    Just _ -> do
+    Just '(' -> do
       exp <- parseExp
       char ')'
       return exp
+    Just '!' -> do 
+      t <- termP
+      return $ Not t
+
 
 punc :: [Parser Char]
 punc = char <$> ['=', '?', '>', '<', '/']

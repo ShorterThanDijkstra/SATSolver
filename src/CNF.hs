@@ -27,7 +27,12 @@ data LangCNF = AtomCNF Identifier |
 -- transform p@(Or (And p1 p2) p3) = And (transform (Or p1 p3)) (transform (Or p2 p3))
 -- transform p@(Or p1 p2) = trace (show p) transform $ Or (transform p1) (transform p2)
 
--- l
+-- 
+atomic :: LangPropCore -> Bool
+atomic (Atom _) = True
+atomic (Not (Atom _)) = True
+atomic _ = False 
+
 transform :: LangPropCore -> LangPropCore
 -- p => p
 transform p@(Atom _) = p
@@ -44,26 +49,49 @@ transform (And p1 p2) = And (transform p1) (transform p2)
 -- p1 | p2 => p1 | p2
 transform p@(Or (Atom _) (Atom _)) = p
 -- p1 | !P2 =>  p1 | !P2
-transform (Or p1@(Atom _) p2@(Not _)) = transform $ (Or p1 $ transform p2)
+transform p@(Or p1@(Atom _) p2@(Not _)) = if atomic p1 && atomic p2
+                                          then p 
+                                          else transform (Or (transform p1) (transform p2))
 -- p1 | (P2 & P3) => (p1 | P2) & (p1 | P3)
 transform (Or p1@(Atom _) (And p2 p3)) = And (transform (Or p1 (transform p2))) $ transform (Or p1 (transform p3))
--- p1 | P2 | P3 => p1 | P2 | P3
-transform (Or p1@(Atom _) (Or p2 p3)) = transform (Or p1 transform (Or (transform p2) (transform p3)))
--- !P1 | p2 => !P1 | p2
-transform (Or p1@(Not _) p2@(Atom _)) = transform $ Or (transform p1) p2  
--- !P1 | !P2 => !P1 | !P2
-transform (Or p1@(Not _) p2@(Not _)) = transform $ Or (transform p1) (transform p2)
--- P1 | (P2 & P3) => P1 | P2
-transform (Or p1@(Not _) (And p2 p3)) =  transform $ Or (And (transform p1) (transform p2)) (And (transform p1) (transform p3))
-transform p@(Or (Not _) (Or _ _)) = p
--- (p1 & p2) | p3 => (p1 | p3) & (p2 | p3)
-transform (Or (And p1 p2) p3@(Atom _)) = (And (Or (
-transform (Or (And p1 p2) p3@(Not _)) = transform $ Or (And p1 (transform p3)) (And p2 (transform p3))
-transform (Or (And p1 p2) p3@(And _ _)) = transform $ Or (And p1 (transform p3)) (And p2 (transform p3))
+-- p1 | (P2 | P3) => p1 | (P2 | P3)
+transform p@(Or p1@(Atom _) (Or p2 p3)) = let p2' = transform p2 
+                                              p3' = transform p3 
+                                          in if p2' == p2 && p3' == p3
+                                             then p 
+                                             else  transform (Or p1 (transform (Or p2' p3')))
 
-transform p@(Or p1 (And p2 p3)) = And (transform (Or p1 p2)) (transform (Or p1 p3))
-transform p@(Or (And p1 p2) p3) = And (transform (Or p1 p3)) (transform (Or p2 p3))
-transform p@(Or p1 p2) = trace (show p) transform $ Or (transform p1) (transform p2)
+-- !P1 | p2 => !P1 | p2
+transform p@(Or p1@(Not _) p2@(Atom _)) = if atomic p1 && atomic p2
+                                          then p 
+                                          else transform (Or (transform p1) (transform p2))
+-- !P1 | !P2 => !P1 | !P2
+transform p@(Or p1@(Not _) p2@(Not _)) = if atomic p1 && atomic p2
+                                         then p 
+                                         else transform (Or (transform p1) (transform p2))
+-- !P1 | (P2 & P3) => (!P1 | P2) & (!P1 | P3) 
+transform (Or p1@(Not _) (And p2 p3)) = And (transform (Or (transform p1) (transform p2))) (transform (Or (transform p1) (transform p3)))
+-- !P1 | (P2 | P3) => !P1 | (P2 | P3)
+transform p@(Or p1@(Not _) (Or p2 p3)) = let p2' = transform p2 
+                                             p3' = transform p3 
+                                          in if p2' == p2 && p3' == p3
+                                             then p 
+                                             else  transform (Or p1 (transform (Or p2' p3')))
+-- (P1 & P2) | P3 => (P1 | P3) & (P2 | P3)
+transform (Or (And p1 p2) p3@(Atom _)) = And (transform (Or (transform p1) (transform p3))) (transform (Or (transform p2) (transform p3)))
+-- (P1 & P2) | !P3 => (P1 | !P3) & (P2 | !P3)
+transform (Or (And p1 p2) p3@(Not _)) = And (transform (Or (transform p1) (transform p3))) (transform (Or (transform p2) (transform p3)))
+-- (P1 & P2) | (P3 & P4) => (P1 | (P3 & P4)) & (P2 | (P3 & P4))
+transform (Or (And p1 p2) p3@(And _ _)) = And (transform (Or (transform p1) (transform p3))) (transform (Or (transform p2) (transform p3)))
+-- (P1 & P2) | (P3 | P4) => (P1 | (P3 | P4)) & (P2 | (P3 | P4))
+transform (Or (And p1 p2) p3@(Or _ _)) = And (transform (Or (transform p1) (transform p3))) (transform (Or (transform p2) (transform p3)))
+-- (P1 | P2) | p3 => (P1 | P2) | p3
+transform p@(Or p1 p2) = let p1' = transform p1
+                             p2' = transform p2 
+                         in if p1' == p1 && p2' == p2
+                         then p
+                         else  transform (Or p1' p2')
+
 
 {- transform :: LangProp -> LangCNF 
 transform (Atom ident) = AtomCNF ident
