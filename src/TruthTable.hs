@@ -2,11 +2,18 @@ module TruthTable (table) where
 import Parser ( parseProp )
 import LangPropCore (Identifier (..), LangPropCore (..), transform)
 import Data.List (nub)
+import Control.Exception.Base (assert)
+
 type Env = [Identifier]
 
 type Vars = [Identifier]
 
-data TruthTable = TruthTable LangPropCore [Identifier] [([Bool], Bool)] deriving Show
+data TruthTable = TruthTable LangPropCore [Identifier] [([Bool], Bool)] 
+
+instance Show TruthTable where
+  show (TruthTable _ vars rows) = let width = maxium $ map length vars
+                                  where untrim s width = assert (length s <= count) 
+							(s ++ replicate (width - length s) ' ')
 
 union :: Vars -> Vars -> Vars
 union vars1 vars2 = nub $ vars1 ++ vars2
