@@ -5,7 +5,7 @@ import Parser
 import qualified CNF as C 
 import qualified LangPropCore as L
 
-test = C.transform . L.transform . testProp
+test = C.transform . L.transform . parseProp'
 
 main :: IO ()
 main = do

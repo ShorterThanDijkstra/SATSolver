@@ -1,4 +1,4 @@
-module Parser (LangProp, parseProp, testProp) where
+module Parser (LangProp, parseProp, parseProp') where
 
 import Data.Void (Void)
 import LangProp (Identifier(..), LangProp(..))
@@ -24,9 +24,9 @@ skipSpace = L.space space1 (L.skipLineComment ";;") (L.skipBlockCommentNested "/
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme skipSpace
 
-testProp :: String -> LangProp 
-testProp input = case parseProp input of 
-  Left _ -> Atom $ Identifier ""
+parseProp' :: String -> LangProp 
+parseProp' input = case parseProp input of 
+  Left _ -> Atom $ Identifier "parse_error"
   Right p -> p
   
 parseProp :: String -> Either String LangProp
