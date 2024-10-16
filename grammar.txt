@@ -1,13 +1,16 @@
 // 原始
-Exp         := Exp & Exp
-Exp         := Exp | Exp
+Exp         := Exp <-> Exp
 Exp         := Exp -> Exp
+Exp         := Exp | Exp
+Exp         := Exp & Exp
 Exp         := !Exp
 Exp         := (Exp)
 Exp         := ident
 
-// 优先级，左结合
-Exp         := ExpEntail
+// 优先级，左结合(不确定优先级是否符合一般规定)
+Exp         := ExpIff 
+ExpIff      := ExpIff <-> ExpEntail
+ExpIff      := ExpEntail
 ExpEntail   := ExpEntail -> ExpOr
 ExpEntail   := ExpOr
 ExpOr       := ExpOr | ExpAnd
@@ -20,7 +23,10 @@ ExpTerm     := ident
 ExpTerm     := (Exp)
 
 // 消除左递归(带'的得特殊处理，直接递归下降会破坏结合性)
-Exp         := ExpEntail
+Exp         := ExpIff 
+ExpIff      := ExpEntail ExpIff'
+ExpIff'     := <-> ExpEntail ExpIff'
+ExpIff'     := epsilon
 ExpEntail   := ExpOr ExpEntail' 
 ExpEntail'  := -> ExpOr ExpEntail'
 ExpEntail'  := epsilon

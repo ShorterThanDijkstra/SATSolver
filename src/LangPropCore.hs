@@ -21,5 +21,6 @@ transform :: LangProp -> LangPropCore
 transform (LangProp.Atom ident) = LangPropCore.Atom ident
 transform (LangProp.Not p) = LangPropCore.Not $ transform p 
 transform (LangProp.Entail p1 p2) = LangPropCore.Or (LangPropCore.Not $ transform p1) $ transform p2
+transform (LangProp.Iff p1 p2) = LangPropCore.And (transform (LangProp.Entail p1 p2)) $ transform (LangProp.Entail p2 p1)
 transform (LangProp.And p1 p2) = LangPropCore.And (transform p1) $ transform p2 
 transform (LangProp.Or p1 p2) = LangPropCore.Or (transform p1) $ transform p2

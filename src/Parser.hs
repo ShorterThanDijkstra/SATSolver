@@ -40,9 +40,6 @@ parseProp input =
         Left err -> Left $ errorBundlePretty err
         Right output -> Right output
 
-parseExp :: Parser LangProp
-parseExp = lexeme entailP
-
 accP :: Parser a -> Parser LangProp -> LangProp -> (LangProp -> LangProp -> LangProp) -> Parser LangProp
 accP startP nextP expr cons = lexeme $ do
   start <- lexeme $ optional startP
@@ -51,6 +48,14 @@ accP startP nextP expr cons = lexeme $ do
     Just _ -> lexeme $ do
       rest <- nextP
       accP startP nextP (cons expr rest) cons
+
+parseExp :: Parser LangProp
+parseExp = lexeme iffP
+
+iffP :: Parser LangProp 
+iffP = label "iff" $ lexeme $ do 
+  entailExp <- entailP
+  accP (string "<->") entailP entailExp Iff
 
 entailP :: Parser LangProp
 entailP = label "entail" $ lexeme $ do
@@ -89,7 +94,7 @@ termP = label "term" $ lexeme $ do
 
 
 punc :: [Parser Char]
-punc = char <$> ['=', '?', '>', '<', '/']
+punc = char <$> ['=', '?', '>', '<', '/', '@']
 
 identP :: Parser Identifier
 identP = label "identifier" $ lexeme $ do

@@ -3,8 +3,8 @@
 module TruthTable (TruthTable, table) where
 
 import Control.Exception.Base (assert)
-import qualified Data.Bifunctor as B
 import Data.List (intercalate, nub)
+import qualified Data.Bifunctor as B
 import qualified LangProp as L'
 import qualified LangPropCore as L
 
@@ -12,7 +12,7 @@ type Env = [L.Identifier]
 
 type Vars = [L.Identifier]
 
-data TruthTable = TruthTable L'.LangProp [L.Identifier] [([Bool], Bool)]
+data TruthTable = TruthTable L'.LangProp Vars [([Bool], Bool)]
 
 instance Show TruthTable where
   show :: TruthTable -> String
@@ -36,7 +36,7 @@ instance Show TruthTable where
 
       joinWith f s = unwords $ map f s
 
-      roundM m n = if n `mod` m == 0 then n else (n `div` m + 1) * m
+      roundM m n = (n `div` m + 1) * m
 
       showBool True = "T"
       showBool False = "F"

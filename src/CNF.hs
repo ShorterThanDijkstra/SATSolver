@@ -5,31 +5,14 @@ module CNF (transform) where
 import Debug.Trace (trace)
 import LangPropCore (Identifier (..), LangPropCore (..))
 
-data LangCNF
+data LangPropCNF
   = AtomCNF Identifier
-  | NotCNF LangCNF -- atom
-  | DisCNF [LangCNF] -- atom or not
-  | ConCNF [LangCNF] -- dis
+  | NotCNF LangPropCNF -- atom
+  | DisCNF [LangPropCNF] -- atom or not
+  | ConCNF [LangPropCNF] -- dis
   deriving (Show)
 
--- transform :: LangPropCore -> LangCNF
--- transform p@(Atom _) = ConCNF [p]
--- transform p@(Not (Atom _)) = p
--- transform (Not (Not p)) = p
--- transform (Not (And p1 p2)) = transform (Or (Not p1) (Not p2))
--- transform (Not (Or p1 p2)) = transform (And (Not p1) (Not p2))
--- transform (And p1 p2) = And (transform p1) (transform p2)
--- transform p@(Or (Atom _) (Atom _)) = p
--- transform p@(Or (Atom _) (Not _)) = p
--- transform (Or p1@(Atom _) (And p2 p3)) = Or (And p1 (transform p2)) (And p1 (transform p3))
--- transform p@(Or (Atom _) (Or _ _)) = p
-
--- transform p@(Or (Not _) (Atom _)) = p
--- transform p@(Or (Not _) (Not _)) = p
--- transform p@(Or p1 (And p2 p3)) = And (transform (Or p1 p2)) (transform (Or p1 p3))
--- transform p@(Or (And p1 p2) p3) = And (transform (Or p1 p3)) (transform (Or p2 p3))
--- transform p@(Or p1 p2) = trace (show p) transform $ Or (transform p1) (transform p2)
-
+-- TODO: to LangPropCNF
 transform :: LangPropCore -> LangPropCore
 -- p => p
 transform p@(Atom _) = p
@@ -52,37 +35,9 @@ transform p@(Or p1 p2) =
       p2' = transform p2
    in if p1' == p1 && p2' == p2 then p else transform (Or p1' p2')
 
-{- transform :: LangProp -> LangCNF
-transform (Atom ident) = AtomCNF ident
-transform (Not p) = case transform p of
-                        t@(AtomCNF _) -> NotCNF t
-                        t@(NotCNF cnf) -> cnf
-                        t@(DisCNF cnf1 cnf2) -> ConCNF (NotCNF cnf1) (NotCNF cnf2)
-                        t@(ConCNF cnf1 cnf2) -> DisCNF (NotCNF cnf1) (NotCNF cnf2)
-transform (Entail p1 p2) = transform (Or (Not p1) p2)
-transform (And p1 p2) = ConCNF (transform p1) (transform p2)
-transform (Or p1 p2) = case (transform p1, transform p2) of
-                        ((ConCNF cnf1 cnf2), t) -> ConCNF (transform (DisCNF cnf1 t)) (DisCNF cnf2 t)
-                        (t, (ConCNF cnf1 cnf2)) -> ConCNF (DisCNF t cnf1) (DisCNF t cnf2)
- -}
--- data LangCNF ty where
---     IdentCNF :: Identifier -> LangCNF ty
---     NotCNF  :: LangProp -> LangCNF ty
---     DisCNF  :: LangCNF Identifier -> LangCNF Identifier -> LangCNF ty
---     ConCNF  :: LangCNF ty -> LangCNF ty -> LangCNF ty
 
--- transform :: LangProp -> LangCNF ty
--- transform (Atom ident) = IdentCNF ident
--- transform (Not p) = NotCNF p
--- transform (Entail p q) = DisCNF (transform (Not p)) (transform q)
--- transform (Or p q) = DisCNF (transform p) (transform q)
--- transform (And p q) = ConCNF (transform p) (transform q)
-
--- p = testProp "(p & q) | p | q"
-
--- cnf :: LangCNF ty
--- cnf = transform p
-
+-- https://en.wikipedia.org/wiki/Tseytin_transformation
+-- https://uds-psl.github.io/ba-gaeher/website/toc.html
 -- data Expr a where
 --     NumE :: Int -> Expr Int
 --     StringE :: String -> Expr String

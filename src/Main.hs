@@ -1,14 +1,33 @@
 module Main (main) where
-import LangProp(Identifier(..), LangProp(..))
 import Naive
-import Parser
-import TruthTable ( table, TruthTable )
-import qualified CNF as C 
-import qualified LangPropCore as L
+import Parser (parseProp)
+import TruthTable ( table)
+import qualified CNF as C
+import qualified LangPropCore as LPC
+import qualified LangProp as LP
 
--- test = C.transform . L.transform . parseProp'
-test :: String -> TruthTable
-test = table . parseProp'
+-- helper 
+p :: (LP.LangProp -> String) -> String -> String
+p f s = case parseProp s of
+  Left _ -> "error"
+  Right r -> f r
+
+-- transform LangProp to LangPropCore
+t :: String -> String
+t = p (show . LPC.transform)
+
+-- parse LangProp
+lp :: String -> String
+lp = p show
+
+-- truth table
+tt :: String -> String
+tt = p (show . table)
+
+cnf :: String -> String
+cnf = p (show . C.transform . LPC.transform)
+
+s = "((p | q) & r) -> (!s)"
 
 main :: IO ()
 main = do
