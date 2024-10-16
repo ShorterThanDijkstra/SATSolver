@@ -29,7 +29,7 @@ eval env (Not expr) = not $ eval env expr
 rows :: [Identifier] -> [[Bool]]
 rows vars = go $ length vars
     where go :: Int -> [[Bool]]
-          go 0 = []
+          go 0 = [[]]
           go n = let rest = go $ n - 1
                  in map (False :) rest ++
                     map (True :) rest
