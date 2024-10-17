@@ -4,15 +4,16 @@ module TruthTable (TruthTable, table) where
 
 import Control.Exception.Base (assert)
 import Data.List (intercalate, nub)
+import LangProp (Identifier(..), LangProp(..))
+
 import qualified Data.Bifunctor as B
-import qualified LangProp as L'
-import qualified LangPropCore as L
 
-type Env = [L.Identifier]
 
-type Vars = [L.Identifier]
+type Env = [Identifier]
 
-data TruthTable = TruthTable L'.LangProp Vars [([Bool], Bool)]
+type Vars = [Identifier]
+
+data TruthTable = TruthTable LangProp Vars [([Bool], Bool)]
 
 instance Show TruthTable where
   show :: TruthTable -> String
@@ -44,20 +45,24 @@ instance Show TruthTable where
 union :: Vars -> Vars -> Vars
 union vars1 vars2 = nub $ vars1 ++ vars2
 
-member :: L.Identifier -> Env -> Bool
+member :: Identifier -> Env -> Bool
 member = elem
 
-freeVars :: L.LangPropCore -> Vars
-freeVars (L.Atom ident) = [ident]
-freeVars (L.And expr1 expr2) = freeVars expr1 `union` freeVars expr2
-freeVars (L.Or expr1 expr2) = freeVars expr1 `union` freeVars expr2
-freeVars (L.Not expr) = freeVars expr
+freeVars :: LangProp -> Vars
+freeVars (Atom ident) = [ident]
+freeVars (And expr1 expr2) = freeVars expr1 `union` freeVars expr2
+freeVars (Or expr1 expr2) = freeVars expr1 `union` freeVars expr2
+freeVars (Not expr) = freeVars expr
+freeVars (If expr1 expr2) = freeVars expr1 `union` freeVars expr2 
+freeVars (Iff expr1 expr2) = freeVars expr1 `union` freeVars expr2 
 
-eval :: Env -> L.LangPropCore -> Bool
-eval env (L.Atom ident) = member ident env
-eval env (L.And expr1 expr2) = eval env expr1 && eval env expr2
-eval env (L.Or expr1 expr2) = eval env expr1 || eval env expr2
-eval env (L.Not expr) = not $ eval env expr
+eval :: Env -> LangProp-> Bool
+eval env (Atom ident) = member ident env
+eval env (And expr1 expr2) = eval env expr1 && eval env expr2
+eval env (Or expr1 expr2) = eval env expr1 || eval env expr2
+eval env (Not expr) = not $ eval env expr
+eval env (If expr1 expr2) = not (eval env expr1) || eval env expr2
+eval env (Iff expr1 expr2) = eval env (If expr1 expr2) && eval env (If expr2 expr1) 
 
 worlds :: Vars -> [[Bool]]
 worlds vars = go $ length vars
@@ -69,21 +74,20 @@ worlds vars = go $ length vars
        in map (False :) rest
             ++ map (True :) rest
 
-table :: L'.LangProp -> TruthTable
+table :: LangProp -> TruthTable
 table p =
-  let p' = L.transform p
-      vars = freeVars p'
+  let vars = freeVars p
       ws = worlds vars
-   in go p' vars ws
+   in go vars ws
   where
-    go :: L.LangPropCore -> Vars -> [[Bool]] -> TruthTable
-    go p' vars ws =
+    go :: Vars -> [[Bool]] -> TruthTable
+    go  vars ws =
       let rows =
             map
               ( \w ->
                   let truthVars = filter snd (zip vars w)
                       env = map fst truthVars
-                   in (w, eval env p')
+                   in (w, eval env p)
               )
               ws
        in TruthTable p vars rows

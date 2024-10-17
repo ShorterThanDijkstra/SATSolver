@@ -54,13 +54,13 @@ parseExp = lexeme iffP
 
 iffP :: Parser LangProp 
 iffP = label "iff" $ lexeme $ do 
-  entailExp <- entailP
-  accP (string "<->") entailP entailExp Iff
+  ifExp <- ifP
+  accP (string "<->") ifP ifExp Iff
 
-entailP :: Parser LangProp
-entailP = label "entail" $ lexeme $ do
+ifP :: Parser LangProp
+ifP = label "if" $ lexeme $ do
   orExp <- orP
-  accP (string "->") orP orExp Entail
+  accP (string "->") orP orExp If
 
 orP :: Parser LangProp
 orP = label "or" $ lexeme $ do

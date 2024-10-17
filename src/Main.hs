@@ -3,7 +3,6 @@ import Naive
 import Parser (parseProp)
 import TruthTable ( table)
 import qualified CNF as C
-import qualified LangPropCore as LPC
 import qualified LangProp as LP
 
 -- helper 
@@ -11,10 +10,6 @@ p :: (LP.LangProp -> String) -> String -> String
 p f s = case parseProp s of
   Left _ -> "error"
   Right r -> f r
-
--- transform LangProp to LangPropCore
-t :: String -> String
-t = p (show . LPC.transform)
 
 -- parse LangProp
 lp :: String -> String
@@ -24,8 +19,8 @@ lp = p show
 tt :: String -> String
 tt = p (show . table)
 
-cnf :: String -> String
-cnf = p (show . C.transform . LPC.transform)
+-- cnf :: String -> String
+-- cnf = p (show . C.transform)
 
 s = "((p | q) & r) -> (!s)"
 
