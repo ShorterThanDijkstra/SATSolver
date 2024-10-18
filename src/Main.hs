@@ -22,11 +22,23 @@ tt = p (show . table)
 cnf :: String -> String
 cnf = p (show . C.transform)
 
+s :: String -> String
+s = p (show . C.size . C.transform)
 s1 = "((p | q) & r) -> (!s)"
 
 s2 = "(!p | (r | q))"
 
 s3 = "((p1 | (p2 | p3)) & (((!p4 | p5) | p6) & p8))"
+
+s4 = "p1 <-> p2"
+
+s5 = "p1 <-> p2 <-> p3"
+
+s6 = "p1 <-> p2 <-> p3 <-> p4"
+
+s7 = "p1 <-> p2 <-> p3 <-> p4 <-> p5"
+
+s8 = "p1 <-> p2 <-> p3 <-> p4 <-> p5 <-> p6"
 
 main :: IO ()
 main = do

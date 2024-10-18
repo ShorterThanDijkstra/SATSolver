@@ -1,39 +1,49 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE InstanceSigs #-}
 
-module CNF (transform) where
+module CNF (transform, size) where
 
 import Debug.Trace (trace)
 import Control.Exception.Base (assert)
 import LangProp (Identifier (..), LangProp (..))
-import Data.List (intercalate, sort)
-import qualified Data.Set as Set
+import Data.List (intercalate, sort, nub)
 -- no gadt
 data LangPropCNF
   = AtomCNF Identifier
   | NotCNF LangPropCNF -- atom
   | DisCNF [LangPropCNF] -- atom or not
   | ConCNF [LangPropCNF] -- dis
-
+  -- deriving Show
 instance Ord LangPropCNF where 
   (<=) :: LangPropCNF -> LangPropCNF -> Bool
   (AtomCNF ident1) <= (AtomCNF ident2) = ident1 <= ident2
   (NotCNF cnf1) <= (NotCNF cnf2) = cnf1 <= cnf2
-  (DisCNF cnfs1) <= (DisCNF cnfs2) = sort 
+  (DisCNF cnfs1) <= (DisCNF cnfs2) = sort cnfs1 <= sort cnfs2
+  (ConCNF cnfs1) <= (ConCNF cnfs2) = sort cnfs1 <= sort cnfs2
+  _ <= _ = False
 
 instance Eq LangPropCNF where 
   (==) :: LangPropCNF -> LangPropCNF -> Bool
   (AtomCNF ident1) == (AtomCNF ident2) = ident1 == ident2
   (NotCNF cnf1) == (NotCNF cnf2) = cnf1 == cnf2
-  (DisCNF cnfs1) == (DisCNF cnfs2) = (Set.fromList cnfs1) == (Set.fromList cnfs2)
-  (ConCNF cnfs1) == (ConCNF cnfs2) = (Set.fromList cnfs1) == (Set.fromList cnfs2)
+  (DisCNF cnfs1) == (DisCNF cnfs2) = sort cnfs1 == sort cnfs2
+  (ConCNF cnfs1) == (ConCNF cnfs2) = sort cnfs1 == sort cnfs2
   _ == _ = False
+
 instance Show LangPropCNF where
   show :: LangPropCNF -> String
   show (AtomCNF ident) = show ident
   show (NotCNF cnf) = "!" ++ show cnf
+  show (DisCNF [cnf]) = show cnf
   show (DisCNF cnfs) = "(" ++ intercalate " | " (map show cnfs) ++ ")"
+  show (ConCNF [cnf]) = show cnf
   show (ConCNF cnfs) = "(" ++ intercalate " & " (map show cnfs) ++ ")"
+
+size :: LangPropCNF -> Int 
+size (AtomCNF _) = 1
+size (NotCNF _) = 1
+size (DisCNF cnfs) = sum $ map size cnfs
+size (ConCNF cnfs) = sum $ map size cnfs
 
 atomic :: LangProp -> Bool
 atomic (Atom _) = True
@@ -43,14 +53,14 @@ atomic _ = False
 disCnfs :: LangProp -> [LangPropCNF]
 disCnfs (Atom ident) = [AtomCNF ident]
 disCnfs (Not (Atom ident)) = [NotCNF (AtomCNF ident)]
-disCnfs (Or p1 p2) = disCnfs p1 ++ disCnfs p2
+disCnfs (Or p1 p2) = nub $ disCnfs p1 ++ disCnfs p2
 disCnfs _ = error "disCnfs"
 
 conCnfs :: LangProp -> [LangPropCNF]
 conCnfs  (Atom ident) = [AtomCNF ident]
 conCnfs (Not (Atom ident)) = [NotCNF (AtomCNF ident)]
 conCnfs o@(Or _ _) = [DisCNF (disCnfs o)]
-conCnfs (And p1 p2) = conCnfs p1 ++ conCnfs p2
+conCnfs (And p1 p2) = nub $ conCnfs p1 ++ conCnfs p2
 conCnfs _ = error "conCnsf"
 
 transform :: LangProp -> LangPropCNF
@@ -88,6 +98,13 @@ transform' p@(Or p1 p2) =
       p2' = transform' p2
    in if p1' == p1 && p2' == p2 then p else transform' (Or p1' p2')
 
+newAtom :: Int -> LangProp
+newAtom i = Atom (Identifier $ "$" ++ show i)
+
+tseytins' :: Int -> LangProp -> (Int, LangProp)
+tseytins' i a@(Atom _) = (i, a)
+tseytins' i n@(Not _) = (i, n)
+tseytins' i a@(And p1 p2) = let (i1, p3) = 
 
 -- data Expr a where
 --     NumE :: Int -> Expr Int
