@@ -19,10 +19,14 @@ lp = p show
 tt :: String -> String
 tt = p (show . table)
 
--- cnf :: String -> String
--- cnf = p (show . C.transform)
+cnf :: String -> String
+cnf = p (show . C.transform)
 
-s = "((p | q) & r) -> (!s)"
+s1 = "((p | q) & r) -> (!s)"
+
+s2 = "(!p | (r | q))"
+
+s3 = "((p1 | (p2 | p3)) & (((!p4 | p5) | p6) & p8))"
 
 main :: IO ()
 main = do
