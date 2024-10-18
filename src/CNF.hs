@@ -5,6 +5,7 @@ module CNF (transform) where
 import Debug.Trace (trace)
 import Control.Exception.Base (assert)
 import LangProp (Identifier (..), LangProp (..))
+import Data.List (intercalate)
 
 -- no gadt
 data LangPropCNF
@@ -12,41 +13,37 @@ data LangPropCNF
   | NotCNF LangPropCNF -- atom
   | DisCNF [LangPropCNF] -- atom or not
   | ConCNF [LangPropCNF] -- dis
-  deriving (Show)
+
+instance Show LangPropCNF where
+  show (AtomCNF ident) = show ident
+  show (NotCNF cnf) = "!" ++ show cnf 
+  show (DisCNF cnfs) = "(" ++ (intercalate " | " $ map show cnfs) ++ ")"
+  show (ConCNF cnfs) = "(" ++ (intercalate " & " $ map show cnfs) ++ ")"
 
 atomic :: LangProp -> Bool 
 atomic (Atom _) = True
 atomic (Not (Atom _)) = True
 atomic _ = False 
 
--- atomics :: LangProp -> [LangProp]
--- atomics a@(Atom _) = [a]
--- atomics n@(Not _) = assert (atomic n) [n]
--- atomics o@(Or p1 p2) = atomics p1 ++ atomics p2 
--- atomics a@(And p1 p2) = atomics p2 ++ atomics p2 
--- atomics _ = error "atomics"
+disCnfs :: LangProp -> [LangPropCNF]
+disCnfs (Atom ident) = [AtomCNF ident]
+disCnfs (Not (Atom ident)) = [(NotCNF (AtomCNF ident))]
+disCnfs (Or p1 p2) = disCnfs p1 ++ disCnfs p2
+disCnfs _ = error "disCnfs"
 
--- disCnfs :: LangProp -> [LangPropCNF]
--- disCnfs a@(Atom _) = [transform a]
--- disCnfs n@(Not (Atom _)) = [transform n]
--- disCnfs (Or p1 p2) = disCnfs p1 ++ disCnfs p2
--- disCnfs _ = error "disCnfs"
-
--- conCnsf :: LangProp -> [LangPropCNF]
--- conCnsf a@(Atom _) = [transform a]
--- conCnsf n@(Not (Atom _)) = [transform n]
--- conCnsf o@(Or _ _) = [DisCNF (disCnfs o)]  
--- conCnsf (And p1 p2) = conCnsf p1 ++ conCnsf p2
--- conCnsf _ = error "conCnsf"
+conCnfs :: LangProp -> [LangPropCNF]
+conCnfs  (Atom ident) = [AtomCNF ident]
+conCnfs (Not (Atom ident)) = [(NotCNF (AtomCNF ident))]
+conCnfs o@(Or _ _) = [DisCNF (disCnfs o)]  
+conCnfs (And p1 p2) = conCnfs p1 ++ conCnfs p2 
+conCnfs _ = error "conCnsf"
 
 transform :: LangProp -> LangPropCNF 
 transform p = case  transform' p of 
   (Atom ident) -> AtomCNF ident
   n@(Not (Atom ident)) -> assert (atomic n) (NotCNF (AtomCNF ident))
-  (Or p1 p2) -> DisCNF (disCnfs p1 ++ disCnfs p2)
-  (And p1 p2) -> case  (transform p1, transform p2) of 
-            (ConCNF subs1, ConCNF subs2) -> ConCNF [DisCNF $ subs1 ++ subs2]
-            _ -> error "transform"
+  o@(Or p1 p2) -> DisCNF $ disCnfs o 
+  a@(And p1 p2) -> ConCNF $ conCnfs a
   _ -> error "transform"
 
 -- TODO: to LangPropCNF
