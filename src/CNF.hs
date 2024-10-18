@@ -14,7 +14,7 @@ data LangPropCNF
   | DisCNF [LangPropCNF] -- atom or not
   | ConCNF [LangPropCNF] -- dis
   -- deriving Show
-instance Ord LangPropCNF where 
+instance Ord LangPropCNF where
   (<=) :: LangPropCNF -> LangPropCNF -> Bool
   (AtomCNF ident1) <= (AtomCNF ident2) = ident1 <= ident2
   (NotCNF cnf1) <= (NotCNF cnf2) = cnf1 <= cnf2
@@ -22,7 +22,7 @@ instance Ord LangPropCNF where
   (ConCNF cnfs1) <= (ConCNF cnfs2) = sort cnfs1 <= sort cnfs2
   _ <= _ = False
 
-instance Eq LangPropCNF where 
+instance Eq LangPropCNF where
   (==) :: LangPropCNF -> LangPropCNF -> Bool
   (AtomCNF ident1) == (AtomCNF ident2) = ident1 == ident2
   (NotCNF cnf1) == (NotCNF cnf2) = cnf1 == cnf2
@@ -39,7 +39,7 @@ instance Show LangPropCNF where
   show (ConCNF [cnf]) = show cnf
   show (ConCNF cnfs) = "(" ++ intercalate " & " (map show cnfs) ++ ")"
 
-size :: LangPropCNF -> Int 
+size :: LangPropCNF -> Int
 size (AtomCNF _) = 1
 size (NotCNF _) = 1
 size (DisCNF cnfs) = sum $ map size cnfs
@@ -101,10 +101,23 @@ transform' p@(Or p1 p2) =
 newAtom :: Int -> LangProp
 newAtom i = Atom (Identifier $ "$" ++ show i)
 
-tseytins' :: Int -> LangProp -> (Int, LangProp)
-tseytins' i a@(Atom _) = (i, a)
-tseytins' i n@(Not _) = (i, n)
-tseytins' i a@(And p1 p2) = let (i1, p3) = 
+tseytins' :: LangProp -> Int -> (Int, [LangProp])
+tseytins' a@(Atom _) i =(i, [])
+tseytins' n@(Not _) i = (i, [])
+tseytins' a@(If p1 p2) i = let x1 = newAtom i
+                           in let (i2, ps1) = tseytins' p1 (i + 1)
+                           in let (i3, ps2) = tseytins' p2 (i2 + 1)
+                           in let x2 = newAtom i2
+                                  x3 = newAtom i3
+                           in let p3 = Iff x1 (If x2 x3)
+                           in (i3, p3: (ps1 ++ ps2))
+
+tseytins' _ _ = error "error"
+
+tseytins :: LangProp -> LangProp
+tseytins p = let (_, ps) = tseytins' p 0
+             in foldr And (newAtom 0) ps
+
 
 -- data Expr a where
 --     NumE :: Int -> Expr Int
