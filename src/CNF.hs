@@ -1,7 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE InstanceSigs #-}
 
-module CNF (transform, size) where
+module CNF (transform, size, tseytins) where
 
 import Debug.Trace (trace)
 import Control.Exception.Base (assert)
@@ -102,21 +102,27 @@ newAtom :: Int -> LangProp
 newAtom i = Atom (Identifier $ "$" ++ show i)
 
 tseytins' :: LangProp -> Int -> (Int, [LangProp])
-tseytins' a@(Atom _) i =(i, [])
-tseytins' n@(Not _) i = (i, [])
-tseytins' a@(If p1 p2) i = let x1 = newAtom i
+tseytins' (Atom _) i =(i, [])
+tseytins' (Not _) i = (i, [])
+tseytins' (If p1 p2) i = let x1 = newAtom i
                            in let (i2, ps1) = tseytins' p1 (i + 1)
                            in let (i3, ps2) = tseytins' p2 (i2 + 1)
                            in let x2 = newAtom i2
                                   x3 = newAtom i3
                            in let p3 = Iff x1 (If x2 x3)
                            in (i3, p3: (ps1 ++ ps2))
-
+tseytins' a@(And p1 p2) i = let x1 = newAtom i
+                           in let (i2, ps1) = tseytins' p1 (i + 1)
+                           in let (i3, ps2) = tseytins' p2 (i + 2)
+                           in let x2 = newAtom i2
+                                  x3 = newAtom i3
+                           in let p3 = Iff x1 (And x2 x3)
+                           in (i3, p3: (ps1 ++ ps2))
 tseytins' _ _ = error "error"
 
 tseytins :: LangProp -> LangProp
 tseytins p = let (_, ps) = tseytins' p 0
-             in foldr And (newAtom 0) ps
+             in foldr And (newAtom 1) ps
 
 
 -- data Expr a where

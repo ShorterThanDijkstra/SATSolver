@@ -24,6 +24,12 @@ cnf = p (show . C.transform)
 
 s :: String -> String
 s = p (show . C.size . C.transform)
+
+ts :: String -> String 
+ts = p (show . C.tseytins)
+
+s0 = "(r -> p) -> (!(q & r) -> p)"
+
 s1 = "((p | q) & r) -> (!s)"
 
 s2 = "(!p | (r | q))"
