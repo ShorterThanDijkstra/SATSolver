@@ -94,7 +94,7 @@ termP = label "term" $ lexeme $ do
 
 
 punc :: [Parser Char]
-punc = char <$> ['=', '?', '>', '<', '/', '@']
+punc = char <$> ['=', '?' , '/', '@']
 
 identP :: Parser Identifier
 identP = label "identifier" $ lexeme $ do

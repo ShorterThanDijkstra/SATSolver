@@ -1,12 +1,13 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE InstanceSigs #-}
 
 module CNF (transform) where
 
 import Debug.Trace (trace)
 import Control.Exception.Base (assert)
 import LangProp (Identifier (..), LangProp (..))
-import Data.List (intercalate)
-
+import Data.List (intercalate, sort)
+import qualified Data.Set as Set
 -- no gadt
 data LangPropCNF
   = AtomCNF Identifier
@@ -14,36 +15,50 @@ data LangPropCNF
   | DisCNF [LangPropCNF] -- atom or not
   | ConCNF [LangPropCNF] -- dis
 
-instance Show LangPropCNF where
-  show (AtomCNF ident) = show ident
-  show (NotCNF cnf) = "!" ++ show cnf 
-  show (DisCNF cnfs) = "(" ++ (intercalate " | " $ map show cnfs) ++ ")"
-  show (ConCNF cnfs) = "(" ++ (intercalate " & " $ map show cnfs) ++ ")"
+instance Ord LangPropCNF where 
+  (<=) :: LangPropCNF -> LangPropCNF -> Bool
+  (AtomCNF ident1) <= (AtomCNF ident2) = ident1 <= ident2
+  (NotCNF cnf1) <= (NotCNF cnf2) = cnf1 <= cnf2
+  (DisCNF cnfs1) <= (DisCNF cnfs2) = sort 
 
-atomic :: LangProp -> Bool 
+instance Eq LangPropCNF where 
+  (==) :: LangPropCNF -> LangPropCNF -> Bool
+  (AtomCNF ident1) == (AtomCNF ident2) = ident1 == ident2
+  (NotCNF cnf1) == (NotCNF cnf2) = cnf1 == cnf2
+  (DisCNF cnfs1) == (DisCNF cnfs2) = (Set.fromList cnfs1) == (Set.fromList cnfs2)
+  (ConCNF cnfs1) == (ConCNF cnfs2) = (Set.fromList cnfs1) == (Set.fromList cnfs2)
+  _ == _ = False
+instance Show LangPropCNF where
+  show :: LangPropCNF -> String
+  show (AtomCNF ident) = show ident
+  show (NotCNF cnf) = "!" ++ show cnf
+  show (DisCNF cnfs) = "(" ++ intercalate " | " (map show cnfs) ++ ")"
+  show (ConCNF cnfs) = "(" ++ intercalate " & " (map show cnfs) ++ ")"
+
+atomic :: LangProp -> Bool
 atomic (Atom _) = True
 atomic (Not (Atom _)) = True
-atomic _ = False 
+atomic _ = False
 
 disCnfs :: LangProp -> [LangPropCNF]
 disCnfs (Atom ident) = [AtomCNF ident]
-disCnfs (Not (Atom ident)) = [(NotCNF (AtomCNF ident))]
+disCnfs (Not (Atom ident)) = [NotCNF (AtomCNF ident)]
 disCnfs (Or p1 p2) = disCnfs p1 ++ disCnfs p2
 disCnfs _ = error "disCnfs"
 
 conCnfs :: LangProp -> [LangPropCNF]
 conCnfs  (Atom ident) = [AtomCNF ident]
-conCnfs (Not (Atom ident)) = [(NotCNF (AtomCNF ident))]
-conCnfs o@(Or _ _) = [DisCNF (disCnfs o)]  
-conCnfs (And p1 p2) = conCnfs p1 ++ conCnfs p2 
+conCnfs (Not (Atom ident)) = [NotCNF (AtomCNF ident)]
+conCnfs o@(Or _ _) = [DisCNF (disCnfs o)]
+conCnfs (And p1 p2) = conCnfs p1 ++ conCnfs p2
 conCnfs _ = error "conCnsf"
 
-transform :: LangProp -> LangPropCNF 
-transform p = case  transform' p of 
+transform :: LangProp -> LangPropCNF
+transform p = case  transform' p of
   (Atom ident) -> AtomCNF ident
   n@(Not (Atom ident)) -> assert (atomic n) (NotCNF (AtomCNF ident))
-  o@(Or p1 p2) -> DisCNF $ disCnfs o 
-  a@(And p1 p2) -> ConCNF $ conCnfs a
+  o@(Or _ _) -> DisCNF $ disCnfs o
+  a@(And _ _) -> ConCNF $ conCnfs a
   _ -> error "transform"
 
 -- TODO: to LangPropCNF
