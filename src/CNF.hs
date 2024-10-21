@@ -5,7 +5,7 @@ module CNF (transform, size, tseytins) where
 
 import Debug.Trace (trace)
 import Control.Exception.Base (assert)
-import LangProp (Identifier (..), LangProp (..))
+import LangProp (Identifier (..), LangProp (..), atomic)
 import Data.List (intercalate, sort, nub)
 -- no gadt
 data LangPropCNF
@@ -44,11 +44,6 @@ size (AtomCNF _) = 1
 size (NotCNF _) = 1
 size (DisCNF cnfs) = sum $ map size cnfs
 size (ConCNF cnfs) = sum $ map size cnfs
-
-atomic :: LangProp -> Bool
-atomic (Atom _) = True
-atomic (Not (Atom _)) = True
-atomic _ = False
 
 disCnfs :: LangProp -> [LangPropCNF]
 disCnfs (Atom ident) = [AtomCNF ident]

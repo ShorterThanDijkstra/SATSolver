@@ -1,7 +1,7 @@
 module Main (main) where
 import Naive
 import Parser (parseProp)
-import TruthTable ( table)
+import TruthTable (table, subclauses)
 import qualified CNF as C
 import qualified LangProp as LP
 
@@ -31,6 +31,11 @@ t = p (show . C.transform)
 ts :: String -> String 
 ts = p (show . C.tseytins)
 
+sub :: String -> [LP.LangProp]
+sub s = case parseProp s of 
+  Left _ ->  []
+  Right p -> subclauses p
+  
 s0 = "(r -> p) -> (!(q & r) -> p)"
 
 s1 = "((p | q) & r) -> (!s)"

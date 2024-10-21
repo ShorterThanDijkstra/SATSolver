@@ -1,6 +1,6 @@
 {-# LANGUAGE InstanceSigs #-}
 
-module LangProp (LangProp(..), Identifier (..)) where
+module LangProp (LangProp(..), Identifier (..), atomic) where
 
 newtype Identifier = Identifier {getId :: String}
 
@@ -23,6 +23,11 @@ data LangProp
   | Iff LangProp LangProp 
   | And LangProp LangProp
   | Or LangProp LangProp deriving Eq
+
+atomic :: LangProp -> Bool
+atomic (Atom _) = True
+atomic (Not (Atom _)) = True
+atomic _ = False
 
 showLeftRight :: LangProp -> String -> LangProp -> [Char]
 showLeftRight left mid right  = "(" ++ show left ++ " " ++ mid ++ " " ++ show right ++ ")"
