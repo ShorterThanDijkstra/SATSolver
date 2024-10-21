@@ -46,6 +46,8 @@ s7 = "p1 <-> p2 <-> p3 <-> p4 <-> p5"
 
 s8 = "p1 <-> p2 <-> p3 <-> p4 <-> p5 <-> p6"
 
+s9 = "(p -> q) -> (q -> p)"
+
 main :: IO ()
 main = do
   putStrLn "hello world"

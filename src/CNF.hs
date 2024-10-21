@@ -112,11 +112,16 @@ newAtom i = Atom (Identifier $ "$" ++ show i)
 -- p -> (q -> r)
 -- x1 <-> p <-> x2
 -- x2 <-> q -> 4
+
+-- (p -> q) -> (p & q)
+-- x1 <-> x2 -> x3
+-- x2 <-> p -> q
+-- x3 <-> p & q
 tseytins' :: LangProp -> Int -> (Int, [LangProp])
 -- tseytins' (Atom _) i =(i, [])
 -- tseytins' (Not _) i = (i, [])
 tseytins' (If p1 p2) i = case (atomic p1, atomic p2) of 
-  (True, True) -> (i, [Iff (newAtom i) (If p1 p2)])
+  (True, True) -> (i + 1, [Iff (newAtom i) (If p1 p2)])
   (False, True) -> let x3 = newAtom i 
                        x4 = newAtom (i + 1)
                        (i1, rest) = tseytins' p1 (i + 1) 
@@ -124,14 +129,13 @@ tseytins' (If p1 p2) i = case (atomic p1, atomic p2) of
   (True, False) -> let x1 = newAtom i
                        x2 = newAtom (i + 1)
                        (i1, rest) = tseytins' p2 (i + 1) 
-                   in (i1, Iff x1 (If x4 p2) : rest)
-   let x1 = newAtom i
-                           in let (i2, ps1) = tseytins' p1 (i + 1)
-                           in let (i3, ps2) = tseytins' p2 (i2 + 1)
-                           in let x2 = newAtom i2
-                                  x3 = newAtom i3
-                           in let p3 = Iff x1 (If x2 x3)
-                           in (i3, p3: (ps1 ++ ps2))
+                   in (i1, Iff x1 (If p1 x2) : rest)
+  (False, False) -> let x1 = newAtom i
+                        x2 = newAtom (i + 1)
+                    in let (i1, rest1) = tseytins' p1 (i + 1)
+                       in let x3 = newAtom i1
+                          in let (i2, rest2) = tseytins' p2 i1
+                             in (i2, Iff x1 (If x2 x3) : (rest1 ++ rest2))
 tseytins' a@(And p1 p2) i = let x1 = newAtom i
                            in let (i2, ps1) = tseytins' p1 (i + 1)
                            in let (i3, ps2) = tseytins' p2 (i + 2)
@@ -141,8 +145,34 @@ tseytins' a@(And p1 p2) i = let x1 = newAtom i
                            in (i3, p3: (ps1 ++ ps2))
 tseytins' _ _ = error "error"
 
+tseytinsCompound :: (LangProp -> LangProp -> LangProp) -> LangProp -> LangProp -> (Int, [LangProp])
+tseytinsCompound = case (atomic p1, atomic p2) of 
+  (True, True) -> (i + 1, [Iff (newAtom i) (If p1 p2)])
+  (False, True) -> let x1 = newAtom i 
+                       x2 = newAtom (i + 1)
+                       (i1, rest) = tseytins' p1 (i + 1) 
+                   in (i1, Iff x1 (cons x2 p2) : rest)
+  (True, False) -> let x1 = newAtom i
+                       x2 = newAtom (i + 1)
+                       (i1, rest) = tseytins' p2 (i + 1) 
+                   in (i1, Iff x1 (cons p1 x2) : rest)
+  (False, False) -> let x1 = newAtom i
+                        x2 = newAtom (i + 1)
+                    in let (i1, rest1) = tseytins' p1 (i + 1)
+                       in let x3 = newAtom i1
+                          in let (i2, rest2) = tseytins' p2 i1
+                             in (i2, Iff x1 (cons x2 x3) : (rest1 ++ rest2))
+tseytins' a@(And p1 p2) i = let x1 = newAtom i
+                           in let (i2, ps1) = tseytins' p1 (i + 1)
+                           in let (i3, ps2) = tseytins' p2 (i + 2)
+                           in let x2 = newAtom i2
+                                  x3 = newAtom i3
+                           in let p3 = Iff x1 (And x2 x3)
+                           in (i3, p3: (ps1 ++ ps2))
+ 
+
 tseytins :: LangProp -> LangProp
-tseytins p = let (_, ps) = tseytins' p 0
+tseytins p = let (_, ps) = tseytins' p 1
              in foldr And (newAtom 1) ps
 
 
