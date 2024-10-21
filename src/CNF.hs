@@ -101,10 +101,31 @@ transform' p@(Or p1 p2) =
 newAtom :: Int -> LangProp
 newAtom i = Atom (Identifier $ "$" ++ show i)
 
+-- (r -> p) -> (!(q & r) -> p)
+
+-- x1 <-> x2 -> x3
+-- x2 <-> r -> p
+-- x3 <-> x4 -> p
+-- x4 <-> !x5
+-- x5 <-> q & r
+
+-- p -> (q -> r)
+-- x1 <-> p <-> x2
+-- x2 <-> q -> 4
 tseytins' :: LangProp -> Int -> (Int, [LangProp])
-tseytins' (Atom _) i =(i, [])
-tseytins' (Not _) i = (i, [])
-tseytins' (If p1 p2) i = let x1 = newAtom i
+-- tseytins' (Atom _) i =(i, [])
+-- tseytins' (Not _) i = (i, [])
+tseytins' (If p1 p2) i = case (atomic p1, atomic p2) of 
+  (True, True) -> (i, [Iff (newAtom i) (If p1 p2)])
+  (False, True) -> let x3 = newAtom i 
+                       x4 = newAtom (i + 1)
+                       (i1, rest) = tseytins' p1 (i + 1) 
+                   in (i1, Iff x3 (If x4 p2) : rest)
+  (True, False) -> let x1 = newAtom i
+                       x2 = newAtom (i + 1)
+                       (i1, rest) = tseytins' p2 (i + 1) 
+                   in (i1, Iff x1 (If x4 p2) : rest)
+   let x1 = newAtom i
                            in let (i2, ps1) = tseytins' p1 (i + 1)
                            in let (i3, ps2) = tseytins' p2 (i2 + 1)
                            in let x2 = newAtom i2
