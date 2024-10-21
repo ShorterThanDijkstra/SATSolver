@@ -64,7 +64,7 @@ conCnfs (And p1 p2) = nub $ conCnfs p1 ++ conCnfs p2
 conCnfs _ = error "conCnsf"
 
 transform :: LangProp -> LangPropCNF
-transform p = case  transform' p of
+transform p = case  transform' (tseytins p) of
   (Atom ident) -> AtomCNF ident
   n@(Not (Atom ident)) -> assert (atomic n) (NotCNF (AtomCNF ident))
   o@(Or _ _) -> DisCNF $ disCnfs o
@@ -109,19 +109,18 @@ newAtom i = Atom (Identifier $ "$" ++ show i)
 -- x4 <-> !x5
 -- x5 <-> q & r
 
--- p -> (q -> r)
--- x1 <-> p <-> x2
--- x2 <-> q -> 4
-
--- (p -> q) -> (p & q)
--- x1 <-> x2 -> x3
--- x2 <-> p -> q
--- x3 <-> p & q
 tseytins' :: LangProp -> Int -> (Int, [LangProp])
-tseytins' a@(Atom _) i =(i + 1, [Iff (newAtom i) a])
+tseytins' a@(Atom _) i =(i, [Iff (newAtom i) a])
+tseytins' n@(Not p) i = if atomic p 
+                        then (i, [Iff (newAtom i) n]) 
+                        else let x1 = newAtom i 
+                             in let x2 = newAtom $ i + 1
+                                in let (i1, rest) = tseytins' p $ i + 1
+                                   in (i1, Iff x1 (Not x2) : rest)
 tseytins' (If p1 p2) i = tseytinsCompound If p1 p2 i 
-tseytins' (And p1 p2) i = tseytinsCompound And p1 p2 i 
-tseytins' _ _ = error "error"
+tseytins' (And p1 p2) i = tseytinsCompound And p1 p2 i
+tseytins' (Or p1 p2) i = tseytinsCompound Or p1 p2 i 
+tseytins' (Iff p1 p2) i = tseytinsCompound Iff p1 p2 i
 
 tseytinsCompound :: (LangProp -> LangProp -> LangProp) -> LangProp -> LangProp -> Int-> (Int, [LangProp])
 tseytinsCompound cons p1 p2 i = case (atomic p1, atomic p2) of 
@@ -137,8 +136,8 @@ tseytinsCompound cons p1 p2 i = case (atomic p1, atomic p2) of
   (False, False) -> let x1 = newAtom i
                         x2 = newAtom (i + 1)
                     in let (i1, rest1) = tseytins' p1 (i + 1)
-                       in let x3 = newAtom i1
-                          in let (i2, rest2) = tseytins' p2 i1
+                       in let x3 = newAtom $ i1 + 1
+                          in let (i2, rest2) = tseytins' p2 $ i1 + 1
                              in (i2, Iff x1 (cons x2 x3) : (rest1 ++ rest2))
 
 tseytins :: LangProp -> LangProp
