@@ -1,9 +1,11 @@
 module Main (main) where
-import Naive
+import Naive (solve)
 import Parser (parseProp)
 import TruthTable (table, subclauses)
+import Data.List (intercalate)
 import qualified CNF as C
 import qualified LangProp as LP
+import qualified Data.Set as Set 
 
 -- helper 
 p :: (LP.LangProp -> String) -> String -> String
@@ -25,17 +27,18 @@ cnf = p (show . C.transform)
 s :: String -> String
 s = p (show . C.size . C.transform)
 
-t :: String -> String 
+t :: String -> String
 t = p (show . C.transform)
 
-ts :: String -> String 
+ts :: String -> String
 ts = p (show . C.tseytins)
 
-sub :: String -> [LP.LangProp]
-sub s = case parseProp s of 
-  Left _ ->  []
-  Right p -> subclauses p
-  
+subs :: String -> String
+subs = p (show . subclauses)
+
+ns :: String -> String
+ns = p (\l -> show $ Set.toList <$> Set.toList  (solve l))
+
 s0 = "(r -> p) -> (!(q & r) -> p)"
 
 s1 = "((p | q) & r) -> (!s)"
@@ -55,6 +58,10 @@ s7 = "p1 <-> p2 <-> p3 <-> p4 <-> p5"
 s8 = "p1 <-> p2 <-> p3 <-> p4 <-> p5 <-> p6"
 
 s9 = "(p -> q) -> (q & p)"
+
+s10 = "(a | b) & (a | c)"
+
+s11 = "b & c"
 
 main :: IO ()
 main = do
