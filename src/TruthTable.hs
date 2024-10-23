@@ -13,11 +13,14 @@ type Vars = [Identifier]
 
 data TruthTable = TruthTable LangProp Vars [LangProp] [([Bool], [Bool], Bool)]
 
+maximum' [] = 0
+maximum' xs = maximum xs
+
 instance Show TruthTable where
   show :: TruthTable -> String
   show (TruthTable p vars subs rows) =
-    let widthAtom = roundM 4 $ maximum $ map (length . show) vars
-        widthSub = roundM 4 $ maximum $ map (length . show) subs
+    let widthAtom = roundM 4 $ maximum' $ map (length . show) vars
+        widthSub = roundM 4 $ maximum' $ map (length . show) subs
         width = max widthAtom widthSub
         largeDiff' = largeDiff widthAtom widthSub
      in let widthAtom' = if largeDiff' then widthAtom else width
@@ -51,8 +54,8 @@ instance Show TruthTable where
       roundM :: Int -> Int -> Int
       roundM m n = (n `div` m + 1) * m
 
-      showBool True = "T"
-      showBool False = "F"
+      showBool True = "1"
+      showBool False = "0"
 
 union :: Vars -> Vars -> Vars
 union vars1 vars2 = nub $ vars1 ++ vars2
