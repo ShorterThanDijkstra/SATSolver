@@ -1,7 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE InstanceSigs #-}
 
-module CNF (transform, size, tseytins, LangPropCNF) where
+module CNF (transform, size, tseytins, LangPropCNF(..)) where
 
 import Debug.Trace (trace)
 import Control.Exception.Base (assert)

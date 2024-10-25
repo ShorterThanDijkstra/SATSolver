@@ -2,7 +2,6 @@ module Main (main) where
 import Naive (solve)
 import Parser (parseProp)
 import TruthTable (table, subclauses)
-import Data.List (intercalate)
 import qualified CNF as C
 import qualified LangProp as LP
 import qualified Data.Set as Set 
