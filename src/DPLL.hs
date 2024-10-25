@@ -1,7 +1,7 @@
 module DPLL where
 import CNF (LangPropCNF(..), size)
 import LangProp(Identifier(..))
-import Data.Set (Set, fromList, union)
+import Data.Set (Set, fromList, union, member)
 
 -- simple :: Set.Set Identifier -> LangPropCNF -> LangPropCNF
 -- simple env (ConCNF clause) =  
@@ -23,8 +23,24 @@ neg :: LangPropCNF -> Bool
 neg (NotCNF (AtomCNF _)) = True
 neg _ = False
 
+simpleDisClause :: Set Identifier -> Set Identifier -> LangPropCNF -> Either Bool LangPropCNF
+simpleDisClause poses negs (DisCNF atoms) = go atoms []
+    where go [] res = Right (DisCNF res)
+          go (hd: rest) res
+            | member (extractIdent hd) poses = Left True
+            | member (extractIdent hd) negs = go rest res
+            | otherwise = go rest (hd : res)
+simpleDisClause _ _ _ = error "simpleDisClause"
+
 unitProp :: Set Identifier -> Set Identifier -> [LangPropCNF] -> LangPropCNF
-unitProp poses negs clauses = undefined
+unitProp poses negs clauses = go clauses []
+  where go :: [LangPropCNF] -> [LangPropCNF] -> LangPropCNF
+        go [] res = ConCNF res
+        go (hd: rest) res = let simpled = simpleDisClause poses negs hd
+                        in case simpled of
+                            Left True -> go rest res
+                            Left False -> ConCNF []
+                            Right clause -> go rest (clause: res)
 
 solve :: Set Identifier -> LangPropCNF -> Maybe (Set Identifier)
 solve env (ConCNF []) = Just env
