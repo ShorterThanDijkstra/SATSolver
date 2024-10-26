@@ -58,8 +58,16 @@ conCnfs o@(Or _ _) = [DisCNF (disCnfs o)]
 conCnfs (And p1 p2) = nub $ conCnfs p1 ++ conCnfs p2
 conCnfs _ = error "conCnsf"
 
+-- transform :: LangProp -> LangPropCNF
+-- transform p = case  transform' (tseytins p) of
+--   (Atom ident) -> AtomCNF ident
+--   n@(Not (Atom ident)) -> assert (atomic n) (NotCNF (AtomCNF ident))
+--   o@(Or _ _) -> DisCNF $ disCnfs o
+--   a@(And _ _) -> ConCNF $ conCnfs a
+--   _ -> error "transform"
+
 transform :: LangProp -> LangPropCNF
-transform p = case  transform' (tseytins p) of
+transform p = case  transform' p of
   (Atom ident) -> AtomCNF ident
   n@(Not (Atom ident)) -> assert (atomic n) (NotCNF (AtomCNF ident))
   o@(Or _ _) -> DisCNF $ disCnfs o

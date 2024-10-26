@@ -4,7 +4,9 @@ import Parser (parseProp)
 import TruthTable (table, subclauses)
 import qualified CNF as C
 import qualified LangProp as LP
-import qualified Data.Set as Set 
+import qualified Data.Set as Set
+import qualified DPLL as D
+import LangProp (Identifier)
 
 -- helper 
 p :: (LP.LangProp -> String) -> String -> String
@@ -37,6 +39,9 @@ subs = p (show . subclauses)
 
 ns :: String -> String
 ns = p (\l -> show $ Set.toList <$> Set.toList  (solve l))
+
+d :: String -> String
+d  = p (show . D.solve)
 
 s0 = "(r -> p) -> (!(q & r) -> p)"
 
