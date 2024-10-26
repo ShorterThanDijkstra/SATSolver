@@ -27,14 +27,26 @@ neg :: LangPropCNF -> Bool
 neg (NotCNF (AtomCNF _)) = True
 neg _ = False
 
+simpleAtom :: Set Identifier -> Set Identifier -> LangPropCNF -> Maybe Bool
+simpleAtom poses negs _ = Nothing
+-- simpleAtom poses negs (AtomCNF ident)
+--   | member ident poses = Just True
+--   | member ident negs = Just False
+--   | otherwise = Nothing
+-- simpleAtom poses negs (NotCNF (AtomCNF ident))
+--   | member ident poses = Just False
+--   | member ident negs = Just True
+--   | otherwise = Nothing
+-- simpleAtom _ _ _ = error "simpleAtom"
+
 simpleDisClause :: Set Identifier -> Set Identifier -> LangPropCNF -> Either Bool LangPropCNF
 simpleDisClause poses negs (DisCNF atoms) = go atoms []
   where
     go [] res = Right (DisCNF res)
-    go (hd : rest) res
-      | member (extractIdent hd) poses = Left True -- True | p
-      | member (extractIdent hd) negs = go rest res -- False | p
-      | otherwise = go rest (hd : res)
+    go (hd : rest) res = case simpleAtom poses negs hd of 
+      Just True -> Left True 
+      Just False -> go rest rest 
+      Nothing -> go rest (hd : res)
 simpleDisClause poses negs a@(AtomCNF _) = simpleDisClause poses negs (DisCNF [a])
 simpleDisClause poses negs n@(NotCNF _) = simpleDisClause poses negs (DisCNF [n])
 simpleDisClause _ _ _ = error "simpleDisClause"
