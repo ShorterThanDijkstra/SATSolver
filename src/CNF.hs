@@ -1,19 +1,21 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE InstanceSigs #-}
 
-module CNF (transform, size, tseytins, LangPropCNF(..)) where
+module CNF (transform, size, atomics, tseytins, LangPropCNF (..)) where
 
-import Debug.Trace (trace)
 import Control.Exception.Base (assert)
+import Data.List (intercalate, nub, sort)
+import Debug.Trace (trace)
 import LangProp (Identifier (..), LangProp (..), atomic)
-import Data.List (intercalate, sort, nub)
+
 -- no gadt
 data LangPropCNF
   = AtomCNF Identifier
   | NotCNF LangPropCNF -- atom
   | DisCNF [LangPropCNF] -- atom or not
   | ConCNF [LangPropCNF] -- dis
-  deriving Show
+  deriving (Show)
+
 instance Ord LangPropCNF where
   (<=) :: LangPropCNF -> LangPropCNF -> Bool
   (AtomCNF ident1) <= (AtomCNF ident2) = ident1 <= ident2
@@ -45,6 +47,12 @@ size (NotCNF _) = 1
 size (DisCNF cnfs) = sum $ map size cnfs
 size (ConCNF cnfs) = sum $ map size cnfs
 
+atomics :: LangPropCNF -> [LangPropCNF]
+atomics a@(AtomCNF _) = [a]
+atomics n@(NotCNF _) = [n]
+atomics (DisCNF cnfs) = concatMap atomics cnfs
+atomics (ConCNF cnfs) = concatMap atomics cnfs
+
 disCnfs :: LangProp -> [LangPropCNF]
 disCnfs (Atom ident) = [AtomCNF ident]
 disCnfs (Not (Atom ident)) = [NotCNF (AtomCNF ident)]
@@ -52,7 +60,7 @@ disCnfs (Or p1 p2) = nub $ disCnfs p1 ++ disCnfs p2
 disCnfs _ = error "disCnfs"
 
 conCnfs :: LangProp -> [LangPropCNF]
-conCnfs  (Atom ident) = [AtomCNF ident]
+conCnfs (Atom ident) = [AtomCNF ident]
 conCnfs (Not (Atom ident)) = [NotCNF (AtomCNF ident)]
 conCnfs o@(Or _ _) = [DisCNF (disCnfs o)]
 conCnfs (And p1 p2) = nub $ conCnfs p1 ++ conCnfs p2
@@ -67,7 +75,7 @@ conCnfs _ = error "conCnsf"
 --   _ -> error "transform"
 
 transform :: LangProp -> LangPropCNF
-transform p = case  transform' p of
+transform p = case transform' p of
   (Atom ident) -> AtomCNF ident
   n@(Not (Atom ident)) -> assert (atomic n) (NotCNF (AtomCNF ident))
   o@(Or _ _) -> DisCNF $ disCnfs o
@@ -113,40 +121,45 @@ newAtom i = Atom (Identifier $ "$" ++ show i)
 -- x5 <-> q & r
 
 tseytins' :: LangProp -> Int -> (Int, [LangProp])
-tseytins' a@(Atom _) i =(i, [Iff (newAtom i) a])
-tseytins' n@(Not p) i = if atomic p 
-                        then (i, [Iff (newAtom i) n]) 
-                        else let x1 = newAtom i 
-                             in let x2 = newAtom $ i + 1
-                                in let (i1, rest) = tseytins' p $ i + 1
-                                   in (i1, Iff x1 (Not x2) : rest)
-tseytins' (If p1 p2) i = tseytinsCompound If p1 p2 i 
+tseytins' a@(Atom _) i = (i, [Iff (newAtom i) a])
+tseytins' n@(Not p) i =
+  if atomic p
+    then (i, [Iff (newAtom i) n])
+    else
+      let x1 = newAtom i
+       in let x2 = newAtom $ i + 1
+           in let (i1, rest) = tseytins' p $ i + 1
+               in (i1, Iff x1 (Not x2) : rest)
+tseytins' (If p1 p2) i = tseytinsCompound If p1 p2 i
 tseytins' (And p1 p2) i = tseytinsCompound And p1 p2 i
-tseytins' (Or p1 p2) i = tseytinsCompound Or p1 p2 i 
+tseytins' (Or p1 p2) i = tseytinsCompound Or p1 p2 i
 tseytins' (Iff p1 p2) i = tseytinsCompound Iff p1 p2 i
 
-tseytinsCompound :: (LangProp -> LangProp -> LangProp) -> LangProp -> LangProp -> Int-> (Int, [LangProp])
-tseytinsCompound cons p1 p2 i = case (atomic p1, atomic p2) of 
+tseytinsCompound :: (LangProp -> LangProp -> LangProp) -> LangProp -> LangProp -> Int -> (Int, [LangProp])
+tseytinsCompound cons p1 p2 i = case (atomic p1, atomic p2) of
   (True, True) -> (i, [Iff (newAtom i) (cons p1 p2)])
-  (False, True) -> let x1 = newAtom i 
-                       x2 = newAtom (i + 1)
-                       (i1, rest) = tseytins' p1 (i + 1) 
-                   in (i1, Iff x1 (cons x2 p2) : rest)
-  (True, False) -> let x1 = newAtom i
-                       x2 = newAtom (i + 1)
-                       (i1, rest) = tseytins' p2 (i + 1) 
-                   in (i1, Iff x1 (cons p1 x2) : rest)
-  (False, False) -> let x1 = newAtom i
-                        x2 = newAtom (i + 1)
-                    in let (i1, rest1) = tseytins' p1 (i + 1)
-                       in let x3 = newAtom $ i1 + 1
-                          in let (i2, rest2) = tseytins' p2 $ i1 + 1
-                             in (i2, Iff x1 (cons x2 x3) : (rest1 ++ rest2))
+  (False, True) ->
+    let x1 = newAtom i
+        x2 = newAtom (i + 1)
+        (i1, rest) = tseytins' p1 (i + 1)
+     in (i1, Iff x1 (cons x2 p2) : rest)
+  (True, False) ->
+    let x1 = newAtom i
+        x2 = newAtom (i + 1)
+        (i1, rest) = tseytins' p2 (i + 1)
+     in (i1, Iff x1 (cons p1 x2) : rest)
+  (False, False) ->
+    let x1 = newAtom i
+        x2 = newAtom (i + 1)
+     in let (i1, rest1) = tseytins' p1 (i + 1)
+         in let x3 = newAtom $ i1 + 1
+             in let (i2, rest2) = tseytins' p2 $ i1 + 1
+                 in (i2, Iff x1 (cons x2 x3) : (rest1 ++ rest2))
 
 tseytins :: LangProp -> LangProp
-tseytins p = let (_, ps) = tseytins' p 1
-             in foldr And (newAtom 1) ps
-
+tseytins p =
+  let (_, ps) = tseytins' p 1
+   in foldr And (newAtom 1) ps
 
 -- data Expr a where
 --     NumE :: Int -> Expr Int
