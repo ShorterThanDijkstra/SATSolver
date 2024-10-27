@@ -13,7 +13,7 @@ data LangPropCNF
   | NotCNF LangPropCNF -- atom
   | DisCNF [LangPropCNF] -- atom or not
   | ConCNF [LangPropCNF] -- dis
-  -- deriving Show
+  deriving Show
 instance Ord LangPropCNF where
   (<=) :: LangPropCNF -> LangPropCNF -> Bool
   (AtomCNF ident1) <= (AtomCNF ident2) = ident1 <= ident2
@@ -30,14 +30,14 @@ instance Eq LangPropCNF where
   (ConCNF cnfs1) == (ConCNF cnfs2) = sort cnfs1 == sort cnfs2
   _ == _ = False
 
-instance Show LangPropCNF where
-  show :: LangPropCNF -> String
-  show (AtomCNF ident) = show ident
-  show (NotCNF cnf) = "!" ++ show cnf
-  show (DisCNF [cnf]) = show cnf
-  show (DisCNF cnfs) = "(" ++ intercalate " | " (map show cnfs) ++ ")"
-  show (ConCNF [cnf]) = show cnf
-  show (ConCNF cnfs) = "(" ++ intercalate " & " (map show cnfs) ++ ")"
+-- instance Show LangPropCNF where
+--   show :: LangPropCNF -> String
+--   show (AtomCNF ident) = show ident
+--   show (NotCNF cnf) = "!" ++ show cnf
+--   show (DisCNF [cnf]) = show cnf
+--   show (DisCNF cnfs) = "(" ++ intercalate " | " (map show cnfs) ++ ")"
+--   show (ConCNF [cnf]) = show cnf
+--   show (ConCNF cnfs) = "(" ++ intercalate " & " (map show cnfs) ++ ")"
 
 size :: LangPropCNF -> Int
 size (AtomCNF _) = 1

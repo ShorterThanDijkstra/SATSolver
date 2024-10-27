@@ -28,24 +28,24 @@ neg (NotCNF (AtomCNF _)) = True
 neg _ = False
 
 simpleAtom :: Set Identifier -> Set Identifier -> LangPropCNF -> Maybe Bool
-simpleAtom poses negs _ = Nothing
--- simpleAtom poses negs (AtomCNF ident)
---   | member ident poses = Just True
---   | member ident negs = Just False
---   | otherwise = Nothing
--- simpleAtom poses negs (NotCNF (AtomCNF ident))
---   | member ident poses = Just False
---   | member ident negs = Just True
---   | otherwise = Nothing
--- simpleAtom _ _ _ = error "simpleAtom"
+simpleAtom poses negs (AtomCNF ident)
+  | member ident poses = Just True
+  | member ident negs = Just False
+  | otherwise = Nothing
+simpleAtom poses negs (NotCNF (AtomCNF ident))
+  | member ident poses = Just False
+  | member ident negs = Just True
+  | otherwise = Nothing
+simpleAtom _ _ _ = error "simpleAtom"
 
 simpleDisClause :: Set Identifier -> Set Identifier -> LangPropCNF -> Either Bool LangPropCNF
 simpleDisClause poses negs (DisCNF atoms) = go atoms []
   where
+    go [] [] =  Left False
     go [] res = Right (DisCNF res)
-    go (hd : rest) res = case simpleAtom poses negs hd of 
+    go (hd : rest) res =case simpleAtom poses negs hd of 
       Just True -> Left True 
-      Just False -> go rest rest 
+      Just False -> go rest res
       Nothing -> go rest (hd : res)
 simpleDisClause poses negs a@(AtomCNF _) = simpleDisClause poses negs (DisCNF [a])
 simpleDisClause poses negs n@(NotCNF _) = simpleDisClause poses negs (DisCNF [n])
@@ -56,7 +56,7 @@ unitProp poses negs clauses = go clauses []
   where
     go :: [LangPropCNF] -> [LangPropCNF] -> Maybe LangPropCNF
     go [] res = Just $ ConCNF res
-    go (hd : rest) res =
+    go a@(hd : rest) res =
       let simpled = simpleDisClause poses negs hd
        in case simpled of
             Left True -> go rest res -- True & p
