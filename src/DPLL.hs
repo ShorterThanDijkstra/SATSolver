@@ -4,6 +4,7 @@ import CNF (LangPropCNF (..), size, transform, atomics)
 import Data.Set (Set, empty, fromList, member, singleton, union, difference)
 import LangProp (Identifier (..), LangProp (..) )
 import Data.List (maximumBy, sort, maximumBy, group)
+import Debug.Trace (trace)
 
 
 extractIdent :: LangPropCNF -> Identifier
@@ -65,7 +66,7 @@ simpleConClause _ _ _ = error "simpleConClause"
 
 findIdent :: LangPropCNF -> Identifier
 findIdent p = mostFrequent $ map extractIdent (atomics p)
-  where 
+  where
       compareFrequency :: (Identifier, Int) -> (Identifier, Int) -> Ordering
       compareFrequency (_, count1) (_, count2)
           | count1 > count2 = LT
@@ -75,7 +76,7 @@ findIdent p = mostFrequent $ map extractIdent (atomics p)
       mostFrequent ::  [Identifier] -> Identifier
       mostFrequent xs = fst $ maximumBy compareFrequency [(head g, length g) | g <- (group $ sort xs)]
 
-pureDis :: LangPropCNF -> (Set Identifier, Set Identifier) 
+pureDis :: LangPropCNF -> (Set Identifier, Set Identifier)
 pureDis (DisCNF atomics) = let poses = fromList $ map extractIdent (filter pos atomics)
                                negs = fromList $ map extractIdent (filter neg atomics)
                            in (poses `difference` negs, negs `difference` poses)
@@ -84,12 +85,12 @@ pureDis n@(NotCNF (AtomCNF _)) = pureDis $ DisCNF [n]
 pureDis _ = error "pureDis"
 
 pureCon :: LangPropCNF -> (Set Identifier, Set Identifier)
-pureCon (ConCNF dis) = go empty empty dis 
+pureCon (ConCNF dis) = go empty empty dis
     where go :: Set Identifier -> Set Identifier -> [LangPropCNF] -> (Set Identifier, Set Identifier)
           go poses negs [] = (poses, negs)
-          go poses negs (hd: rest) = let (poses', negs') = pureDis hd 
-                                     in go ((poses `union` poses') `difference` (negs `union` negs')) 
-                                            ((negs `union` negs') `difference` (poses `union` poses')) 
+          go poses negs (hd: rest) = let (poses', negs') = pureDis hd
+                                     in go ((poses `union` poses') `difference` (negs `union` negs'))
+                                            ((negs `union` negs') `difference` (poses `union` poses'))
                                             rest
 pureCon d@(DisCNF _) = pureCon $ ConCNF [d]
 pureCon atomic = pureCon $ ConCNF [DisCNF [atomic]]
@@ -98,10 +99,12 @@ posesAndNegs :: LangPropCNF -> (Set Identifier, Set Identifier)
 posesAndNegs c@(ConCNF clauses) =
   let units = concatMap extractAtomic (filter (\dis -> size dis == 1) clauses)
       ident = findIdent c
-      pures = pureCon c
-   in if null units
-        then (singleton ident, empty)
-        else (fromList (map extractIdent (filter pos units)), fromList $ map extractIdent $ filter neg units)
+      p@(purePoses, pureNegs) = pureCon c
+   in if not (null purePoses && null pureNegs)
+      then p 
+      else if not (null units)
+        then  (fromList (map extractIdent (filter pos units)), fromList $ map extractIdent $ filter neg units)
+        else  (singleton ident, empty)
 posesAndNegs _ = error "posesAndNegs"
 
 -- Unit propagation and Pure literal elimination
@@ -110,10 +113,10 @@ solve' env (ConCNF []) = Just env
 solve' env c@(ConCNF _) =
   let (poses, negs) = posesAndNegs c
       newEnv = (env `union` poses)
-   in case simpleConClause poses negs c of
-        Right con -> solve' newEnv con
-        Left True -> Just newEnv
-        Left False -> Nothing
+  in case simpleConClause poses negs c of
+       Right con -> solve' newEnv con
+       Left True -> Just newEnv
+       Left False -> Nothing
 solve' env d@(DisCNF _) = solve' env (ConCNF [d])
 solve' env atomic = solve' env (ConCNF [DisCNF [atomic]])
 
