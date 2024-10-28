@@ -34,6 +34,11 @@ t = p (show . C.transform)
 ts :: String -> String
 ts = p (show . C.tseytins)
 
+cnf' :: String -> C.LangPropCNF 
+cnf' s = case parseProp s of 
+  Left _ -> C.AtomCNF $ LP.Identifier "error"
+  Right p -> C.transform p
+
 subs :: String -> String
 subs = p (show . subclauses)
 
