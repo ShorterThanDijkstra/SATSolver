@@ -72,6 +72,8 @@ s10 = "(a | b) & (a | c)"
 
 s11 = "b & c"
 
+bug = "((wk & !ek & !rk) | (!wk & ek & !rk) | (!wk & !ek & rk))& ((wt <-> !ek) & (et <-> wt) & (rt <-> !wt)) & ((wk -> wt) & (ek -> et) & (rk -> rt))"
+
 main :: IO ()
 main = do
   putStrLn "hello world"
