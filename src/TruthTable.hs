@@ -1,6 +1,6 @@
 {-# LANGUAGE InstanceSigs #-}
 
-module TruthTable (TruthTable, table, subclauses) where
+module TruthTable (TruthTable, table, subclauses, isTauto, isContra) where
 
 import Control.Exception.Base (assert)
 import Data.List (intercalate, nub)
@@ -123,3 +123,12 @@ table p =
               )
               ws
        in TruthTable p vars (subclauses p) rows
+
+isTauto :: LangProp -> Bool
+isTauto p = let TruthTable _ _ _ bs = table p
+            in all (\(_,_, b) -> b) bs
+
+
+isContra :: LangProp -> Bool
+isContra p = let TruthTable _ _ _ bs = table p
+            in all (\(_,_, b) -> not b) bs

@@ -3,6 +3,7 @@ module Naive (solve, solve') where
 import qualified Data.Set as Set
 import Parser ( parseProp )
 import LangProp (Identifier (..), LangProp (..))
+import Data.Bool (Bool)
 
 
 type Env = Set.Set Identifier

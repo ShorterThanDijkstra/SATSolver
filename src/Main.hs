@@ -1,7 +1,7 @@
 module Main (main) where
 import Naive (solve)
 import Parser (parseProp)
-import TruthTable (table, subclauses)
+import TruthTable (table, subclauses, isTauto)
 import qualified CNF as C
 import qualified LangProp as LP
 import qualified Data.Set as Set
@@ -48,6 +48,8 @@ ns = p (\l -> show $ Set.toList <$> Set.toList  (solve l))
 d :: String -> String
 d  = p (show . D.solve)
 
+isT :: String -> String 
+isT = p (show . isTauto)
 s0 = "(r -> p) -> (!(q & r) -> p)"
 
 s1 = "((p | q) & r) -> (!s)"
