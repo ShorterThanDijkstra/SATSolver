@@ -1,7 +1,7 @@
 module Main (main) where
 import Naive (solve)
 import Parser (parseProp)
-import TruthTable (table, subclauses, isTauto)
+import TruthTable (table, subclauses, isTauto, invalid)
 import qualified CNF as C
 import qualified LangProp as LP
 import qualified Data.Set as Set
@@ -50,13 +50,20 @@ d  = p (show . D.solve)
 
 isT :: String -> String 
 isT = p (show . isTauto)
+
+iv :: String -> String
+iv = p ((\m -> case m of 
+                 Nothing -> "[]"
+                 (Just r) -> show r)
+         . invalid)
+
 s0 = "(r -> p) -> (!(q & r) -> p)"
 
-s1 = "((p | q) & r) -> (!s)"
+s1 = "((p || q) & r) -> (!s)"
 
-s2 = "(!p | (r | q))"
+s2 = "(!p || (r || q))"
 
-s3 = "((p1 | (p2 | p3)) & (((!p4 | p5) | p6) & p8))"
+s3 = "((p1 || (p2 || p3)) & (((!p4 || p5) || p6) & p8))"
 
 s4 = "p1 <-> p2"
 
@@ -70,7 +77,7 @@ s8 = "p1 <-> p2 <-> p3 <-> p4 <-> p5 <-> p6"
 
 s9 = "(p -> q) -> (q & p)"
 
-s10 = "(a | b) & (a | c)"
+s10 = "(a || b) & (a || c)"
 
 s11 = "b & c"
 

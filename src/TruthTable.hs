@@ -1,9 +1,9 @@
 {-# LANGUAGE InstanceSigs #-}
 
-module TruthTable (TruthTable, table, subclauses, isTauto, isContra) where
+module TruthTable (TruthTable, table, subclauses, isTauto, isContra, invalid) where
 
 import Control.Exception.Base (assert)
-import Data.List (intercalate, nub)
+import Data.List (intercalate, nub, find)
 import Debug.Trace (trace)
 import LangProp (Identifier (..), LangProp (..))
 
@@ -123,6 +123,12 @@ table p =
               )
               ws
        in TruthTable p vars (subclauses p) rows
+
+invalid :: LangProp -> Maybe [(Identifier, Bool)]
+invalid p = let TruthTable _ vars _ bs = table p
+            in case (find (\(_, _, r) -> not r) bs) of 
+                 Nothing -> Nothing
+                 Just (ws, _, _) -> Just $ zip vars ws
 
 isTauto :: LangProp -> Bool
 isTauto p = let TruthTable _ _ _ bs = table p

@@ -65,7 +65,7 @@ ifP = label "if" $ lexeme $ do
 orP :: Parser LangProp
 orP = label "or" $ lexeme $ do
   andExp <- andP
-  accP (char '|') andP andExp Or
+  accP (string "||") andP andExp Or
 
 andP :: Parser LangProp
 andP = label "and" $ lexeme $ do
